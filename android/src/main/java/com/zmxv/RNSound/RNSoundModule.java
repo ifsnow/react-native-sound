@@ -196,7 +196,7 @@ public class RNSoundModule extends ReactContextBaseJavaModule implements AudioMa
       }
       return mediaPlayer;
     }
-    
+
     return null;
   }
 
@@ -405,23 +405,29 @@ public class RNSoundModule extends ReactContextBaseJavaModule implements AudioMa
 
   @Override
   public void onAudioFocusChange(int focusChange) {
-    if (!this.mixWithOthers) {
-      MediaPlayer player = this.playerPool.get(this.focusedPlayerKey);
+    if (this.mixWithOthers) {
+      return;
+    }
 
-      if (player != null) {
-        if (focusChange <= 0) {
-            this.wasPlayingBeforeFocusChange = player.isPlaying();
+    MediaPlayer player = this.playerPool.get(this.focusedPlayerKey);
+    if (player == null) {
+      return;
+    }
 
-            if (this.wasPlayingBeforeFocusChange) {
-              this.pause(this.focusedPlayerKey, null);
-            }
-        } else {
-            if (this.wasPlayingBeforeFocusChange) {
-              this.play(this.focusedPlayerKey, null);
-              this.wasPlayingBeforeFocusChange = false;
-            }
+    try {
+      if (focusChange <= 0) {
+        this.wasPlayingBeforeFocusChange = player.isPlaying();
+
+        if (this.wasPlayingBeforeFocusChange) {
+          this.pause(this.focusedPlayerKey, null);
+        }
+      } else {
+        if (this.wasPlayingBeforeFocusChange) {
+          this.play(this.focusedPlayerKey, null);
+          this.wasPlayingBeforeFocusChange = false;
         }
       }
+    } catch(IllegalStateException ex) {
     }
   }
 
