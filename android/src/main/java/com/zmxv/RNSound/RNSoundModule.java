@@ -5,7 +5,6 @@ import android.content.res.AssetFileDescriptor;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.media.MediaPlayer.OnErrorListener;
-import android.net.Uri;
 import android.media.AudioManager;
 
 import com.facebook.react.bridge.Arguments;
@@ -17,7 +16,6 @@ import com.facebook.react.bridge.ReactMethod;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.modules.core.DeviceEventManagerModule;
-import com.facebook.react.modules.core.ExceptionsManagerModule;
 
 import java.io.File;
 import java.util.HashMap;
@@ -34,6 +32,7 @@ public class RNSoundModule extends ReactContextBaseJavaModule implements AudioMa
   Boolean mixWithOthers = true;
   Double focusedPlayerKey;
   Boolean wasPlayingBeforeFocusChange = false;
+  Double mSpeed = 0.0;
 
   public RNSoundModule(ReactApplicationContext context) {
     super(context);
@@ -204,12 +203,12 @@ public class RNSoundModule extends ReactContextBaseJavaModule implements AudioMa
       }
       return mediaPlayer;
     }
-    
+
     return null;
   }
 
   @ReactMethod
-  public void play(final Double key, final Callback callback) {
+  public void play(final Double key, final Double speed, final Callback callback) {
     MediaPlayer player = this.playerPool.get(key);
     if (player == null) {
       setOnPlay(false, key);
@@ -248,6 +247,7 @@ public class RNSoundModule extends ReactContextBaseJavaModule implements AudioMa
         }
       }
     });
+
     player.setOnErrorListener(new OnErrorListener() {
       boolean callbackWasCalled = false;
 
@@ -264,7 +264,14 @@ public class RNSoundModule extends ReactContextBaseJavaModule implements AudioMa
         return true;
       }
     });
-    player.start();
+
+    if (speed != this.mSpeed && android.os.Build.VERSION.SDK_INT >= 23) {
+      this.mSpeed = speed;
+      player.setPlaybackParams(player.getPlaybackParams().setSpeed(speed.floatValue()));
+    } else {
+      player.start();
+    }
+
     setOnPlay(true, key);
   }
 
@@ -320,7 +327,7 @@ public class RNSoundModule extends ReactContextBaseJavaModule implements AudioMa
       }
     }
   }
-	
+
   @Override
   public void onCatalystInstanceDestroy() {
     java.util.Iterator it = this.playerPool.entrySet().iterator();
@@ -375,10 +382,10 @@ public class RNSoundModule extends ReactContextBaseJavaModule implements AudioMa
 
   @ReactMethod
   public void setSpeed(final Double key, final Float speed) {
-	if (android.os.Build.VERSION.SDK_INT < 23) {
-	  Log.w("RNSoundModule", "setSpeed ignored due to sdk limit");
-	  return;
-	}
+    if (android.os.Build.VERSION.SDK_INT < 23) {
+      Log.w("RNSoundModule", "setSpeed ignored due to sdk limit");
+      return;
+    }
 
     MediaPlayer player = this.playerPool.get(key);
     if (player != null) {
@@ -440,7 +447,7 @@ public class RNSoundModule extends ReactContextBaseJavaModule implements AudioMa
             }
         } else {
             if (this.wasPlayingBeforeFocusChange) {
-              this.play(this.focusedPlayerKey, null);
+              this.play(this.focusedPlayerKey, this.mSpeed, null);
               this.wasPlayingBeforeFocusChange = false;
             }
         }

@@ -80,9 +80,9 @@ Sound.prototype.isLoaded = function() {
   return this._loaded;
 };
 
-Sound.prototype.play = function(onEnd) {
+Sound.prototype.play = function(onEnd, speed) {
   if (this._loaded) {
-    RNSound.play(this._key, (successfully) => onEnd && onEnd(successfully));
+    RNSound.play(this._key, speed || this._speed, (successfully) => onEnd && onEnd(successfully));
   } else {
     onEnd && onEnd(false);
   }
@@ -198,11 +198,6 @@ Sound.prototype.setNumberOfLoops = function(value) {
 
 Sound.prototype.setSpeed = function(value) {
   this._speed = value;
-  if (this._loaded) {
-    if (!IsWindows) {
-      RNSound.setSpeed(this._key, value);
-    }
-  }
   return this;
 };
 

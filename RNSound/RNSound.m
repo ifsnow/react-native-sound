@@ -9,6 +9,7 @@
 @implementation RNSound {
     NSMutableDictionary *_playerPool;
     NSMutableDictionary *_callbackPool;
+    NSNumber *_speed;
 }
 
 @synthesize _key = _key;
@@ -233,7 +234,8 @@ RCT_EXPORT_METHOD(prepare
 }
 
 RCT_EXPORT_METHOD(play
-                  : (nonnull NSNumber *)key withCallback
+                  : (nonnull NSNumber *)key withSpeed
+                  : (nonnull NSNumber *)speed withCallback
                   : (RCTResponseSenderBlock)callback) {
     [[AVAudioSession sharedInstance] setActive:YES error:nil];
     [[NSNotificationCenter defaultCenter]
@@ -245,6 +247,10 @@ RCT_EXPORT_METHOD(play
     AVAudioPlayer *player = [self playerForKey:key];
     if (player) {
         [[self callbackPool] setObject:[callback copy] forKey:key];
+        if (speed != _speed) {
+            _speed = speed;
+            player.rate = [speed floatValue];
+        }
         [player play];
         [self setOnPlay:YES forPlayerKey:key];
     }
